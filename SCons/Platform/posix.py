@@ -32,17 +32,12 @@ selection method.
 
 __revision__ = "__FILE__ __REVISION__ __DATE__ __DEVELOPER__"
 
-import errno
-import os
-import os.path
 import subprocess
-import sys
-import select
 
-import SCons.Util
 from SCons.Platform import TempFileMunge, process_spawner
 from SCons.Platform.virtualenv import ImportVirtualenv
 from SCons.Platform.virtualenv import ignore_virtualenv, enable_virtualenv
+from SCons.Utilities.spawner import _exec_subprocess
 
 exitvalmap = {
     2 : 127,
@@ -65,14 +60,12 @@ def escape(arg):
 assert process_spawner is not None  # must be set before
 
 if process_spawner:
-    from SCons.Job import spawner_tls
+    from SCons.Script.Main import num_jobs
+    from SCons.Utilities.spawner import prepare_pool
 
-    def exec_subprocess(args, env):
-        return spawner_tls.spawner.run(args, env)
+    exec_subprocess = prepare_pool(num_jobs)
 else:
-    def exec_subprocess(args, env):
-        proc = subprocess.Popen(args, env = env, close_fds = True)
-        return proc.wait()
+    exec_subprocess = _exec_subprocess
 
 def subprocess_spawn(sh, escape, cmd, args, env):
     return exec_subprocess([sh, '-c', ' '.join(args)], env)
